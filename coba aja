@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\CompareServerConfig;
-use Carbon\Carbon;
 use App\Models\ServerConfig;
 use App\Models\ServerHistory;
 use Illuminate\Console\Command;
@@ -50,6 +49,7 @@ class CheckServer extends Command
                 $status == 0 &&
                 stripos($hasil, "Request timed out") === false &&
                 stripos($hasil, "Destination host unreachable") === false &&
+                stripos($hasil, "Destination net unreachable") === false &&
                 stripos($hasil, "General failure") === false 
             ){
                 $server->status_internet = 1;
@@ -57,7 +57,7 @@ class CheckServer extends Command
                 $server->status_internet = 0;
             }
 
-            $server->updated_at = now();
+
             $server->save();
 
             //memenetukan server yang sedang aktif
@@ -79,9 +79,18 @@ class CheckServer extends Command
                     'ip' => $server->ip_internet,
                     'status' => true
                 ];
+            }else{
+
+            $serverAktif = [
+                'kode_pks' => $server->kode_pks,
+                'nama_server' => 'Tidak ada server aktif',
+                'jalur' =>'-',
+                'ip' => '-',
+                'status' => false
+            ];
             }
 
-            if ($serverAktif) {
+            
 
             $last = ServerHistory::where('kode_pks', $server->kode_pks)
                 ->latest()
@@ -91,43 +100,49 @@ class CheckServer extends Command
                     !$last ||
                     $last->nama_server != $serverAktif['nama_server'] ||
                     $last->jalur != $serverAktif['jalur'] ||
-                    $last->ip != $serverAktif['ip']
+                    $last->ip != $serverAktif['ip'] ||
+                    $last->status != $serverAktif['status']
                 ){
                     ServerHistory::create([
                         'kode_pks' => $serverAktif['kode_pks'],
                         'nama_server' => $serverAktif['nama_server'],
                         'jalur' => $serverAktif['jalur'],
                         'ip' => $serverAktif['ip'],
-                        'status' => true,
+                        'status' => $serverAktif['status'],
                         'xml_generated' => false,
                     ]);
-                     CompareServerConfig::updateOrCreate(
 
-            [
-                'kode_pks' => $server->kode_pks,
-            ],
-            [
-                'server_aktif' => $serverAktif
-                ? $serverAktif['nama_server']
-                :'Tidak ada server aktif',
+                    $compare = CompareServerConfig::where(
+                        'kode_pks',
+                        $server->kode_pks
+                    )->first();
 
-                'jalur' =>$serverAktif
-                ? $serverAktif['jalur']
-                : '-',
+                    if(!$compare){
 
-                'ip' => $serverAktif
-                ? $serverAktif['ip']
-                : '-',
+                    CompareServerConfig::create([
+                        'kode_pks' => $serverAktif['kode_pks'],
+                        'server_aktif' => $serverAktif['nama_server'],
+                        'jalur' => $serverAktif['jalur'],
+                        'ip' => $serverAktif['ip'],
+                        'status' => $serverAktif['status'],
+                        'last_checked' => now(),
+                        'xml_generated' => false,
+                    ]);
+                    }else{
 
-                'status' => $serverAktif ? true : false,
+                    $compare->server_aktif = $serverAktif['nama_server'];
+                    $compare->jalur = $serverAktif['jalur'];
+                    $compare->ip = $serverAktif['ip'];
+                    $compare->status =$serverAktif['status'];
+                    $compare->last_checked = now ();
+                    $compare->xml_generated = false;
 
-                'last_checked' => now(),
+                    $compare->save();
 
-                'xml_generated' => false,
-            ]
-            );
+                    }
+                    
                 }
-            }
+            
 
             $this->info(
                 $server->nama_server .
