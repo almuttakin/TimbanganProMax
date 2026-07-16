@@ -21,6 +21,10 @@ class CheckServer extends Command
 
             $servers = ServerConfig::where('kode_pks', $pks->kode_pks)->get();
 
+            $serverAktif= null;
+
+            foreach ($servers as $server){
+
             $output =[];
             $status = 1;
 
@@ -143,6 +147,7 @@ class CheckServer extends Command
                     $compare->save();
 
                     }
+                }
                     
                 }
             
