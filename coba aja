@@ -66,9 +66,15 @@ class CheckServer extends Command
 
 
             $server->save();
+             $this->info(
+                $server->kode_pks .
+                "|" . $server->nama_server .
+                " | Local: " . $server->status_local .
+                " | Internet: " . $server->status_internet
+            );
 
             //memenetukan server yang sedang aktif
-            $serverAktif = null;
+            
 
             if ($server->status_local){
                 $serverAktif = [
@@ -97,7 +103,7 @@ class CheckServer extends Command
             ];
             }
 
-            
+            }
 
             $last = ServerHistory::where('kode_pks', $server->kode_pks)
                 ->latest()
@@ -149,14 +155,8 @@ class CheckServer extends Command
                     }
                 }
                     
-                }
-            
 
-            $this->info(
-                $server->nama_server .
-                " | Local: " . $server->status_local .
-                " | Internet: " . $server->status_internet
-            );
+           
         }
 
         return Command::SUCCESS;
