@@ -1,0 +1,162 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\CompareServerConfig;
+use App\Models\ServerConfig;
+use App\Models\ServerHistory;
+use Illuminate\Console\Command;
+
+class CheckServer extends Command
+{
+    protected $signature = 'server:check';
+
+    protected $description = 'Check status server timbangan';
+
+    public function handle()
+    {
+        $pkss = ServerConfig::select('kode_pks')->distinct()->get();
+
+        foreach ($pkss as $pks){
+
+            $servers = ServerConfig::where('kode_pks', $pks->kode_pks)->get();
+
+            $serverAktif= null;
+
+            foreach ($servers as $server){
+
+            $output =[];
+            $status = 1;
+
+            exec("ping -n 1 " . $server->ip_local, $output, $status);
+
+            $hasil = implode(" ", $output);
+
+            if(
+                $status == 0 &&
+                stripos($hasil, "Request timed out") === false &&
+                stripos($hasil, "Destination host unreachable") === false &&
+                stripos($hasil, "Destination net unreachable") === false &&
+                stripos($hasil, "General failure") === false 
+            ){
+                $server->status_local = 1;
+            } else {
+                $server->status_local = 0;
+            }
+
+            //ping ip internet
+            $output =[];
+            $status = 1;
+
+            exec("ping -n 1 " . $server->ip_internet, $output, $status);
+
+            $hasil = implode(" ", $output);
+
+            if(
+                $status == 0 &&
+                stripos($hasil, "Request timed out") === false &&
+                stripos($hasil, "Destination host unreachable") === false &&
+                stripos($hasil, "Destination net unreachable") === false &&
+                stripos($hasil, "General failure") === false 
+            ){
+                $server->status_internet = 1;
+            } else {
+                $server->status_internet = 0;
+            }
+
+
+            $server->save();
+            $this->info(
+                $server->kode_pks .
+                " | " . $server->nama_server .
+                " | Local: " . $server->status_local .
+                " | Internet: " . $server->status_internet
+            );
+
+            //memenetukan server yang sedang aktif
+
+            if ($server->status_local){
+                $serverAktif = [
+                    'kode_pks' => $server->kode_pks,
+                    'nama_server' => $server->nama_server,
+                    'jalur' => 'Local',
+                    'ip' => $server->ip_local,
+                    'status' => true
+                ];
+            } elseif ($server->status_internet){
+                $serverAktif = [
+                    'kode_pks' => $server->kode_pks,
+                    'nama_server' => $server->nama_server,
+                    'jalur' => 'Internet',
+                    'ip' => $server->ip_internet,
+                    'status' => true
+                ];
+            }else{
+
+            $serverAktif = [
+                'kode_pks' => $server->kode_pks,
+                'nama_server' => 'Tidak ada server aktif',
+                'jalur' =>'-',
+                'ip' => '-',
+                'status' => false
+            ];
+            }
+
+            }
+
+            $last = ServerHistory::where('kode_pks', $server->kode_pks)
+                ->latest()
+                ->first();
+
+                if (
+                    !$last ||
+                    $last->nama_server != $serverAktif['nama_server'] ||
+                    $last->jalur != $serverAktif['jalur'] ||
+                    $last->ip != $serverAktif['ip'] ||
+                    $last->status != $serverAktif['status']
+                ){
+                    ServerHistory::create([
+                        'kode_pks' => $serverAktif['kode_pks'],
+                        'nama_server' => $serverAktif['nama_server'],
+                        'jalur' => $serverAktif['jalur'],
+                        'ip' => $serverAktif['ip'],
+                        'status' => $serverAktif['status'],
+                        'xml_generated' => false,
+                    ]);
+
+                    $compare = CompareServerConfig::where(
+                        'kode_pks',
+                        $server->kode_pks
+                    )->first();
+
+                    if(!$compare){
+
+                    CompareServerConfig::create([
+                        'kode_pks' => $serverAktif['kode_pks'],
+                        'server_aktif' => $serverAktif['nama_server'],
+                        'jalur' => $serverAktif['jalur'],
+                        'ip' => $serverAktif['ip'],
+                        'status' => $serverAktif['status'],
+                        'last_checked' => now(),
+                        'xml_generated' => false,
+                    ]);
+                    }else{
+
+                    $compare->server_aktif = $serverAktif['nama_server'];
+                    $compare->jalur = $serverAktif['jalur'];
+                    $compare->ip = $serverAktif['ip'];
+                    $compare->status =$serverAktif['status'];
+                    $compare->last_checked = now ();
+                    $compare->xml_generated = false;
+
+                    $compare->save();
+
+                    }
+                }
+                    
+                
+        }
+
+        return Command::SUCCESS;
+    }
+}
