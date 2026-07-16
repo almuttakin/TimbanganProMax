@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-
 use App\Models\CompareServerConfig;
 use App\Models\ServerConfig;
 use App\Models\ServerHistory;
@@ -16,9 +15,12 @@ class CheckServer extends Command
 
     public function handle()
     {
-        $servers = ServerConfig::all();
+        $pkss = ServerConfig::select('kode_pks')->distinct()->get();
 
-        foreach ($servers as $server){
+        foreach ($pkss as $pks){
+
+            $servers = ServerConfig::where('kode_pks', $pks->kode_pks)->get();
+
             $output =[];
             $status = 1;
 
