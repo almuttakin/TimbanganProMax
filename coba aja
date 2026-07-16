@@ -15,6 +15,7 @@ class CheckServer extends Command
 
     public function handle()
     {
+        $adaPerubahan = false;
         $pkss = ServerConfig::select('kode_pks')->distinct()->get();
 
         foreach ($pkss as $pks){
@@ -122,6 +123,8 @@ class CheckServer extends Command
                     $last->ip != $serverAktif['ip'] ||
                     $last->status != $serverAktif['status']
                 ){
+                    $adaPerubahan = true;
+
                     ServerHistory::create([
                         'kode_pks' => $serverAktif['kode_pks'],
                         'nama_server' => $serverAktif['nama_server'],
@@ -163,6 +166,16 @@ class CheckServer extends Command
                     
 
            
+        }
+
+        if ($adaPerubahan) {
+            $this->newLine();
+            $this->info("=====================");
+            $this->info("Terjadi Perubahan");
+            $this->info("XML siap digenerate");
+            $this->info("=====================");
+        }else {
+            $this->line("Tidak ada perubahan konfigurasi");
         }
 
         return Command::SUCCESS;
