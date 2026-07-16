@@ -92,20 +92,22 @@ class CheckServer extends Command
                     'ip' => $server->ip_internet,
                     'status' => true
                 ];
-            }else{
+            }
+            }
 
-            $serverAktif = [
-                'kode_pks' => $server->kode_pks,
-                'nama_server' => 'Tidak ada server aktif',
-                'jalur' =>'-',
-                'ip' => '-',
-                'status' => false
-            ];
+            if(!$serverAktif){
+                $serverAktif = [
+                    'kode_pks' => $pks->kode_pks,
+                    'nama_server' => 'Tidak ada server aktif',
+                    'jalur' => '-',
+                    'ip' => '-',
+                    'status' => false
+                ];
             }
 
             }
 
-            $last = ServerHistory::where('kode_pks', $server->kode_pks)
+            $last = ServerHistory::where('kode_pks', $pks->kode_pks)
                 ->latest()
                 ->first();
 
