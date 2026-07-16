@@ -19,7 +19,9 @@ class CheckServer extends Command
 
         foreach ($pkss as $pks){
 
-            $servers = ServerConfig::where('kode_pks', $pks->kode_pks)->get();
+            $servers = ServerConfig::where('kode_pks', $pks->kode_pks)
+            ->OrderBy('id')
+            ->get();
 
             $serverAktif= null;
 
@@ -84,6 +86,8 @@ class CheckServer extends Command
                     'ip' => $server->ip_local,
                     'status' => true
                 ];
+                break;
+
             } elseif ($server->status_internet){
                 $serverAktif = [
                     'kode_pks' => $server->kode_pks,
@@ -92,6 +96,7 @@ class CheckServer extends Command
                     'ip' => $server->ip_internet,
                     'status' => true
                 ];
+                break;
             }
             }
 
@@ -104,8 +109,7 @@ class CheckServer extends Command
                     'status' => false
                 ];
             }
-
-            }
+            
 
             $last = ServerHistory::where('kode_pks', $pks->kode_pks)
                 ->latest()
