@@ -1,0 +1,4 @@
+Illuminate\Database\Eloquent\Collection {#689 ▼ // app\Http\Controllers\GenerateXmlController.php:21
+  #items: array:1 [▶]
+  #escapeWhenCastingToString: false
+}
