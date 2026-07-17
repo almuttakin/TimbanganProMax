@@ -1,0 +1,35 @@
+App\Models\CompareServerConfig {#956 ▼ // app\Http\Controllers\GenerateXmlController.php:16
+  #connection: "mysql"
+  #table: "compare_server_configs"
+  #primaryKey: "id"
+  #keyType: "int"
+  +incrementing: true
+  #with: []
+  #withCount: []
+  +preventsLazyLoading: false
+  #perPage: 15
+  +exists: true
+  +wasRecentlyCreated: false
+  #escapeWhenCastingToString: false
+  #attributes: array:8 [▶]
+  #original: array:8 [▶]
+  #changes: []
+  #previous: []
+  #casts: array:3 [▶]
+  #classCastCache: []
+  #attributeCastCache: []
+  #dateFormat: null
+  #appends: []
+  #dispatchesEvents: []
+  #observables: []
+  #relations: []
+  #touches: []
+  #relationAutoloadCallback: null
+  #relationAutoloadContext: null
+  +timestamps: false
+  +usesUniqueIds: false
+  #hidden: []
+  #visible: []
+  #fillable: array:7 [▶]
+  #guarded: array:1 [▶]
+}
