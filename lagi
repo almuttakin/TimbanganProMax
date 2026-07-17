@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class CompareServerConfig extends Model
+{
+    protected $fillable =[
+        'kode_pks',
+        'server_aktif',
+        'jalur',
+        'ip',
+        'status',
+        'last_checked',
+        'xml_generated',
+    ];
+
+    protected $casts =[
+        'last_checked' => 'datetime',
+        'status' => 'boolean',
+        'xml_generated' => 'boolean',
+    ];
+
+    public $timestamps =  false;
+}
