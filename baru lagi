@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Http\Controllers\PingController;
+
+class CheckServer extends Command
+{
+    protected $signature = 'server:check';
+
+    protected $description = 'Check status server timbangan';
+
+    public function handle()
+    {
+        $controller = new PingController();
+
+        $adaPerubahan = $controller->checkServers();
+
+        if($adaPerubahan){
+
+            $this->warn('>>>Terjadi perubahan server<<<');
+            $this->warn('>>>XML siap di generated<<<');
+           
+
+        }
+
+        return Command::SUCCESS;
+    }
+}
