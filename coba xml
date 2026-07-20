@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\ServerHistory;
+use App\Models\ServerConfig;
+use App\Models\CompareServerConfig;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+
+class GenerateXmlController extends Controller
+{
+    public function generate()
+    {
+       $servers = CompareServerConfig::where(
+        'xml_generated',
+        false
+       )->get();
+
+       dd($servers->count(), $servers);
+
+       if($servers->isEmpty()){
+        return "Tidak ada perubahan";
+       }
+
+       $xml = new \SimpleXMLElement('<servers/>');
+
+       foreach ($servers as $server){
+        $item = $xml->addChild('server');
+        $item = $xml->addChild('kode_pks', $server->kode_pks);
+        $item = $xml->addChild('server_aktif', $server->server_aktif);
+        $item = $xml->addChild('jalur', $server->jalur);
+        $item = $xml->addChild('ip', $server->ip);
+        $item = $xml->addChild('status', $server->status ? 'Online' : 'Offline');
+        $item = $xml->addChild('last_checked', $server->last_checked);
+       }
+
+       $path = storage_path('app/public/server_config.xml');
+
+       $xml->asXML($path);
+
+       foreach($servers as $server){
+        $server->xml_generated = true;
+        $server->save();
+       }
+
+
+    }
+}
