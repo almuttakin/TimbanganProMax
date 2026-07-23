@@ -1,0 +1,102 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\ServerHistory;
+use App\Models\ServerConfig;
+use App\Models\CompareServerConfig;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+
+class GenerateXmlController extends Controller
+{
+    public function generate()
+    {
+        self::generateXml();
+
+        return response()->download(
+            storage_path('app/public/current.xml')
+        );
+    }
+
+    public static function generateXml()
+    {
+        // Cek apakah ada perubahan
+        $adaPerubahan = CompareServerConfig::where('xml_generated', false)->exists();
+
+        if (!$adaPerubahan) {
+            return true;
+        }
+
+        // Ambil semua data CompareServerConfig
+        $servers = CompareServerConfig::orderBy('kode_pks')->get();
+
+        $currentPath = storage_path('app/public/current.xml');
+        $previousPath = storage_path('app/public/previous.xml');
+
+        // Simpan current menjadi previous
+        if (file_exists($currentPath)) {
+            copy($currentPath, $previousPath);
+        }
+
+        // Generate current.xml
+        $xmlString = <<<XML
+        <?xml version="1.0" encoding="UTF-8"?>
+
+        <xml
+        xmlns:s="uuid:BDC6E3F0-6DA3-11d1-A2A3-00AA00C14882"
+        xmlns:dt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"
+        xmlns:rs="urn:schemas-microsoft-com:rowset"
+        xmlns:z="#RowsetSchema">
+
+        <s:Schema id="RowsetSchema">
+
+        <s:ElementType
+        name="row"
+        content="eltOnly"
+        rs:updatable="true">
+
+        </s:ElementType>
+
+        </s:Schema>
+
+        <rs:data>
+        <rs:insert>
+
+        </rs:insert>
+        </rs:data>
+
+        </xml>
+
+        XML;
+
+        $xml = new \SimpleXMLElement($xmlString);
+
+        $insert = $xml->children('urn:schemas-microsft-com:rowset')
+        ->data
+        ->insert;
+
+        foreach ($servers as $server) {
+
+            $item = $xml->addChild('server');
+
+            $item->addChild('kode_pks', $server->kode_pks);
+            $item->addChild('server_aktif', $server->server_aktif);
+            $item->addChild('jalur', $server->jalur);
+            $item->addChild('ip', $server->ip);
+            $item->addChild('status', $server->status ? 'Online' : 'Offline');
+            $item->addChild('last_checked', $server->last_checked);
+            $item->addChild('last_updated', $server->last_updated);
+        }
+        dd($xml->asXML());
+        $xml->asXML($currentPath);
+
+        // Tandai semua perubahan sudah digenerate
+        CompareServerConfig::query()->update([
+            'xml_generated' => true
+        ]);
+
+        return true;
+    }
+}
