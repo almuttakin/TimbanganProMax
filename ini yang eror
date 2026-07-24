@@ -242,3 +242,9 @@ class PingController extends Controller
 }
 
 }
+
+
+Route::get('/ping',[PingController::class,'index']);
+
+Route::post('/generate-xml', [GenerateXmlController::class, 'generate']
+)->name('generate.xml');
